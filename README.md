@@ -93,38 +93,92 @@ Body example:
 
 `GET /graph_data?slot_size=30`
 
+Returns the processed availability graph data.
+
+The backend takes all stored moderators, converts their local availability ranges to UTC, applies the current filters, and groups the result into time slots.
+
+The `slot_size` query parameter defines the duration of each graph slot in minutes.
+
 Example:
 
 ```text
 http://127.0.0.1:8000/graph_data?slot_size=30
 ```
 
+With `slot_size=30`, the backend returns **48 slots**, each representing 30 minutes of the day:
+
+```text
+00:00-00:30
+00:30-01:00
+01:00-01:30
+...
+23:30-24:00
+```
+
 Response example:
 
 ```json
 [
-  [
   {
     "start_minute": 0,
     "end_minute": 30,
-    "active_mods": [
-      "Hunter"
-    ],
+    "active_mods": ["Dray"],
     "mod_count": 1
   },
   {
     "start_minute": 30,
     "end_minute": 60,
-    "active_mods": [
-      "Hunter"
-    ],
+    "active_mods": ["Dray"],
     "mod_count": 1
   },
+  ...
+  {
+    "start_minute": 150,
+    "end_minute": 180,
+    "active_mods": ["Dray", "Thorfinn"],
+    "mod_count": 2
+  },
+  ...
+  {
+    "start_minute": 750,
+    "end_minute": 780,
+    "active_mods": ["Thorfinn"],
+    "mod_count": 1
+  }
   ...
 ]
 ```
 
-`slot_size` is expressed in minutes.
+Response fields:
+
+- `start_minute`: start of the slot, expressed as minutes after midnight UTC.
+- `end_minute`: end of the slot, expressed as minutes after midnight UTC.
+- `active_mods`: list of moderators available during that slot.
+- `mod_count`: number of active moderators in that slot.
+
+Example conversion:
+
+```text
+750 minutes = 12:30 UTC
+780 minutes = 13:00 UTC
+```
+
+So this slot:
+
+```json
+{
+  "start_minute": 750,
+  "end_minute": 780,
+  "active_mods": ["Dray"],
+  "mod_count": 1
+}
+```
+
+represents:
+
+```text
+12:30-13:00 UTC
+```
 
 ---
 
