@@ -47,8 +47,6 @@ Web app for managing moderator availability across multiple timezones.
 - Modular Time Slot handling when generating graph
 
 
-"Updated README, Major improvements including handling full time format (12:35 can be accepted as a valid start time of availability for example)"
-
 
 
 
