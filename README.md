@@ -68,7 +68,7 @@ Body example:
 ```json
 {
   "name": "Dray",
-  "rank": "COMMANDER",
+  "rank": "KNIGHT",
   "timezone": "Europe/Rome",
   "availability": [
     {
@@ -95,12 +95,24 @@ Response example:
 
 ```json
 [
+  [
   {
-    "start_minute": 750,
-    "end_minute": 780,
-    "active_mods": ["Dray"],
+    "start_minute": 0,
+    "end_minute": 30,
+    "active_mods": [
+      "Hunter"
+    ],
     "mod_count": 1
-  }
+  },
+  {
+    "start_minute": 30,
+    "end_minute": 60,
+    "active_mods": [
+      "Hunter"
+    ],
+    "mod_count": 1
+  },
+  ...
 ]
 ```
 
