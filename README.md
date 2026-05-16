@@ -50,10 +50,15 @@ Web app for managing moderator availability across multiple timezones.
 "Updated README, Major improvements including handling full time format (12:35 can be accepted as a valid start time of availability for example)"
 
 
-# How to send data to backend
 
 
-````md
+
+
+
+
+
+# How to Send Data to Backend
+
 ## API Endpoints
 
 ### Add Moderator
@@ -74,7 +79,7 @@ Body example:
     }
   ]
 }
-````
+```
 
 ---
 
@@ -101,6 +106,8 @@ Response example:
 ]
 ```
 
+`slot_size` is expressed in minutes.
+
 ---
 
 ### Get Timezones
@@ -116,8 +123,3 @@ Returns all valid timezone names.
 `POST /reset`
 
 Clears all stored moderators.
-
-```
-
-Nota: `slot_size=30` significa slot da 30 minuti.
-```
