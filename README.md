@@ -18,20 +18,29 @@ Web app for managing moderator availability across multiple timezones.
 #### Backend:
 - Store data in json file
 - Load data from json file
-- Send graph data to frontend
 - Filtering script
-- Enable changes
+- Enable changes to single mods
+- Remove mod by name
+
+
+
 
 ### In progress:
 
 #### Frontend:
 - 
 #### Backend:
-- Store data in runtime objects
+- 
+
+
+
 
 ### Done:
 
 #### Frontend:
 - 
 #### Backend:
-- 
+- Store data in runtime objects
+- Send graph data with POST endpoint
+- RESET POST request to reset all data
+- Handle Timezone conversion

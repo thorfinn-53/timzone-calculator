@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import FastAPI
 from enum import Enum
 from dataclasses import dataclass
@@ -31,9 +32,6 @@ class AvailabilityRange:
         if self.end_hour < 0 or self.end_hour > 24:
             raise ValueError("end_hour must be between 0 and 24")
 
-        if self.start_hour >= self.end_hour:
-            raise ValueError("start_hour must be lower than end_hour")
-
 
 @dataclass
 class Moderator:
@@ -41,6 +39,14 @@ class Moderator:
     rank: Rank
     timezone: ZoneInfo
     availability: list[AvailabilityRange]
+    utc_offset: int
+    filtered: bool
+
+@dataclass
+class GraphHour:
+    hour: int
+    active_mods: list[str]
+    mod_count: int
 
 
 # ----------------------------------------------------------------
@@ -48,7 +54,14 @@ class Moderator:
 # ----------------------------------------------------------------
 
 moderators: list[Moderator] = []
-
+final_graph: list[GraphHour] = [
+    GraphHour(
+        hour=i,
+        active_mods=[],
+        mod_count=0
+    )
+    for i in range(24)
+]
 
 
 # ----------------------------------------------------------------
@@ -59,7 +72,6 @@ moderators: list[Moderator] = []
 def root():
     return {"message": "Backend online"}
 
-
 @app.get("/timezones")
 def get_timezones():
     return sorted(available_timezones())
@@ -68,6 +80,10 @@ def get_timezones():
 def get_moderators():
     return moderators
 
+@app.get("/graph_data")
+def get_graph_data():
+    return final_graph
+
 # ----------------------------------------------------------------
 # (INPUT) DATA FROM FRONTEND FUNCTIONS (POST ENDPOINTS)
 # ----------------------------------------------------------------
@@ -75,11 +91,52 @@ def get_moderators():
 @app.post("/moderators")
 def create_moderator(data: dict):
 
-    moderators.append(data)
+    availability = [
+        AvailabilityRange(
+            start_hour=slot["start_hour"],
+            end_hour=slot["end_hour"]
+        )
+        for slot in data["availability"]
+    ]
+
+    moderator = add_moderator(
+        name=data["name"],
+        rank=Rank[data["rank"]],
+        timezone_name=data["timezone"],
+        availability=availability
+    )
+
+    calculate_graph_data()
 
     return {
         "message": "Moderator added",
-        "moderator": data
+        "moderator": {
+            "name": moderator.name,
+            "rank": moderator.rank.value,
+            "timezone": moderator.timezone.key,
+            "availability": [
+                {
+                    "start_hour": slot.start_hour,
+                    "end_hour": slot.end_hour
+                }
+                for slot in moderator.availability
+            ],
+            "utc_offset": moderator.utc_offset,
+            "filtered": moderator.filtered
+        }
+    }
+
+@app.post("/reset")
+def reset_data():
+
+    moderators.clear()
+
+    for graph_hour in final_graph:
+        graph_hour.active_mods.clear()
+        graph_hour.mod_count = 0
+
+    return {
+        "message": "All data reset"
     }
 
 # ----------------------------------------------------------------
@@ -100,15 +157,76 @@ def add_moderator(
         name=name,
         rank=rank,
         timezone=ZoneInfo(timezone_name),
-        availability=availability
+        availability=availability,
+        utc_offset=get_utc_offset_hours(timezone_name),
+        filtered=False
     )
 
     moderators.append(moderator)
     return moderator
 
 
-def get_moderators() -> list[Moderator]:
+def get_all_moderators() -> list[Moderator]:
     return moderators
+
+
+def calculate_graph_data():
+    
+    for graph_hour in final_graph:
+        graph_hour.active_mods.clear()
+        graph_hour.mod_count = 0
+
+        for moderator in moderators:
+
+            mod_availability_range_UTC: list[AvailabilityRange] = []
+
+            for availability_range in moderator.availability:
+                utc_start = (availability_range.start_hour - moderator.utc_offset) % 24
+                utc_end = (availability_range.end_hour - moderator.utc_offset) % 24
+
+                mod_availability_range_UTC.append(
+                    AvailabilityRange(
+                        start_hour=utc_start,
+                        end_hour=utc_end
+                    )
+                )
+
+            if is_hour_in_availability_ranges(mod_availability_range_UTC,graph_hour.hour):
+                graph_hour.active_mods.append(moderator.name)
+                graph_hour.mod_count += 1
+
+
+
+
+def is_hour_in_availability_ranges(av_range_list:list[AvailabilityRange], hour:int):
+    for availability_range in av_range_list:
+        start:int = availability_range.start_hour
+        end:int = availability_range.end_hour
+
+        if start < end:
+            if start <= hour < end:
+                return True
+            
+        elif start > end:
+            if hour >= start or hour < end:
+                return True
+        
+        else:
+            return True
+        
+    return False
+
+
+
+def get_utc_offset_hours(timezone_name: str) -> int:
+
+    timezone = ZoneInfo(timezone_name)
+
+    now = datetime.now(timezone)
+
+    utc_offset = now.utcoffset()
+
+    return int(utc_offset.total_seconds() / 3600)
 
 
 # ----------------------------------------------------------------
@@ -135,7 +253,7 @@ def main():
         ]
     )
 
-    print(get_moderators())
+    print(get_all_moderators())
 
 
 if __name__ == "__main__":
