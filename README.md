@@ -133,3 +133,22 @@ Returns all valid timezone names.
 `POST /reset`
 
 Clears all stored moderators.
+
+---
+
+### Filter Moderators
+
+`POST /filters`
+
+Body example:
+
+```json
+{
+  "filtered_mods": [
+    "Dray",
+    "Thorfinn"
+  ]
+}
+```
+
+All moderators whose names are inside `filtered_mods` will be excluded from graph generation.

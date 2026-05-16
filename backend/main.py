@@ -78,7 +78,24 @@ def get_timezones():
 
 @app.get("/moderators")
 def get_moderators():
-    return moderators
+    return [
+        {
+            "name": moderator.name,
+            "rank": moderator.rank.value,
+            "offduty": moderator.offduty,
+            "timezone": moderator.timezone.key,
+            "availability": [
+                {
+                    "start_minute": slot.start_minute,
+                    "end_minute": slot.end_minute
+                }
+                for slot in moderator.availability
+            ],
+            "utc_offset": moderator.utc_offset,
+            "filtered": moderator.filtered
+        }
+        for moderator in moderators
+    ]
 
 @app.get("/graph_data")
 def get_graph_data(slot_size: int = SLOT_SIZE):
@@ -122,6 +139,23 @@ def reset_data():
 
     return {
         "message": "All data reset"
+    }
+
+@app.post("/filters")
+def set_filters(data: dict):
+
+    filtered_mods = data["filtered_mods"]
+
+    for moderator in moderators:
+
+        if moderator.name in filtered_mods:
+            moderator.filtered = True
+
+        else:
+            moderator.filtered = False
+
+    return {
+        "message": "Filters updated"
     }
 
 # ----------------------------------------------------------------
@@ -173,29 +207,30 @@ def calculate_graph_data(slot_size: int):
         slot_start = graph_slot.start_minute
 
         for moderator in moderators:
-            utc_ranges: list[AvailabilityRange] = []
+            if moderator.filtered==False:
+                utc_ranges: list[AvailabilityRange] = []
 
-            for availability_range in moderator.availability:
-                utc_start = convert_local_minutes_to_utc(
-                    availability_range.start_minute,
-                    moderator.utc_offset
-                )
-
-                utc_end = convert_local_minutes_to_utc(
-                    availability_range.end_minute,
-                    moderator.utc_offset
-                )
-
-                utc_ranges.append(
-                    AvailabilityRange(
-                        start_minute=utc_start,
-                        end_minute=utc_end
+                for availability_range in moderator.availability:
+                    utc_start = convert_local_minutes_to_utc(
+                        availability_range.start_minute,
+                        moderator.utc_offset
                     )
-                )
 
-            if is_minute_in_availability_ranges(utc_ranges, slot_start):
-                graph_slot.active_mods.append(moderator.name)
-                graph_slot.mod_count += 1
+                    utc_end = convert_local_minutes_to_utc(
+                        availability_range.end_minute,
+                        moderator.utc_offset
+                    )
+
+                    utc_ranges.append(
+                        AvailabilityRange(
+                            start_minute=utc_start,
+                            end_minute=utc_end
+                        )
+                    )
+
+                if is_minute_in_availability_ranges(utc_ranges, slot_start):
+                    graph_slot.active_mods.append(moderator.name)
+                    graph_slot.mod_count += 1
 
 
 
