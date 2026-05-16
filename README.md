@@ -16,9 +16,6 @@ Web app for managing moderator availability across multiple timezones.
 #### Frontend:
 - 
 #### Backend:
-- Store data in json file
-- Load data from json file
-- Filtering script
 - Enable changes to single mods
 - Remove mod by name
 
@@ -45,6 +42,9 @@ Web app for managing moderator availability across multiple timezones.
 - RESET POST request to reset all data
 - Handle Timezone conversion
 - Modular Time Slot handling when generating graph
+- Filtering script
+- Store data in json file
+- Load data from json file
 
 
 
@@ -56,6 +56,14 @@ Web app for managing moderator availability across multiple timezones.
 
 
 # How to Send Data to Backend
+
+## Launch the backend:
+```bash
+uvicorn backend.main:app --reload
+```
+
+Data from the json file that stores every moderator and Autosave option will be automatically loaded. (See below)
+
 
 ## API Endpoints
 
@@ -132,7 +140,9 @@ Returns all valid timezone names.
 
 `POST /reset`
 
-Clears all stored moderators.
+Clears all stored moderators LOCALLY.
+If you want to clear all stored data then proceed to do RESET AND THEN SAVE to erase all data permanently.
+WATCH OUT: If Autosave is enabled (not by default), reset means all data will be deleted permanently.
 
 ---
 
@@ -152,3 +162,88 @@ Body example:
 ```
 
 All moderators whose names are inside `filtered_mods` will be excluded from graph generation.
+
+
+
+### Save Data
+
+`POST /save`
+
+Saves current runtime data into the JSON file.
+
+Response example:
+
+```json
+{
+  "message": "Data saved successfully"
+}
+```
+
+---
+
+### Load Data
+
+`POST /load`
+
+Loads data from the JSON file into runtime memory. Data will be also automatically loaded when starting backend.
+
+Response example:
+
+```json
+{
+  "message": "Data loaded successfully",
+  "moderators_count": 3
+}
+```
+
+---
+
+### Enable / Disable Autosave
+
+`POST /autosave?enabled=true`
+
+Enables autosave (off by default). This option will be saved and loaded every session since it's stored in the json file, like moderators list.
+
+```text
+http://127.0.0.1:8000/autosave?enabled=true
+```
+
+To disable it:
+
+```text
+http://127.0.0.1:8000/autosave?enabled=false
+```
+
+Response example:
+
+```json
+{
+  "autosave": true
+}
+```
+
+---
+
+### Get Autosave Status
+
+`GET /autosave`
+
+Returns whether autosave is currently enabled or disabled.
+
+Response example:
+
+```json
+{
+  "autosave": true
+}
+```
+
+---
+
+### Autosave Behavior
+
+If autosave is enabled, data will be automatically saved when the backend server shuts down.
+
+Manual saving is still possible with:
+
+`POST /save`

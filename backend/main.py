@@ -1,10 +1,33 @@
+from contextlib import asynccontextmanager
 from datetime import datetime
 from fastapi import FastAPI
 from enum import Enum
 from dataclasses import dataclass
 from zoneinfo import ZoneInfo, available_timezones
+import json
 
-app = FastAPI()
+
+
+# ----------------------------------------------------------------
+# BACKEND LIFESPAN HANDLER
+# ----------------------------------------------------------------
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("SERVER STARTING")
+
+    load_moderators()
+
+    yield
+
+    auto_save()
+
+    print("SERVER STOPPING")
+
+
+app = FastAPI(lifespan=lifespan)
+
+
 
 # ----------------------------------------------------------------
 # DATA DEFINITIONS
@@ -12,6 +35,8 @@ app = FastAPI()
 
 SLOT_SIZE = 60
 MINUTES_PER_DAY = 1440
+DATA_FILE = "data/moderators.json"
+AUTO_SAVE = False
 
 class Rank(Enum):
     RECRUIT = "Recruit"
@@ -43,7 +68,7 @@ class Moderator:
     name: str
     rank: Rank
     offduty: bool
-    timezone: ZoneInfo
+    timezone: str
     availability: list[AvailabilityRange]
     utc_offset: int
     filtered: bool
@@ -83,7 +108,7 @@ def get_moderators():
             "name": moderator.name,
             "rank": moderator.rank.value,
             "offduty": moderator.offduty,
-            "timezone": moderator.timezone.key,
+            "timezone": moderator.timezone,
             "availability": [
                 {
                     "start_minute": slot.start_minute,
@@ -101,6 +126,12 @@ def get_moderators():
 def get_graph_data(slot_size: int = SLOT_SIZE):
     calculate_graph_data(slot_size)
     return final_graph
+
+@app.get("/autosave")
+def get_autosave():
+    return {
+        "autosave": AUTO_SAVE
+    }
 
 # ----------------------------------------------------------------
 # (INPUT) DATA FROM FRONTEND FUNCTIONS (POST ENDPOINTS)
@@ -158,6 +189,35 @@ def set_filters(data: dict):
         "message": "Filters updated"
     }
 
+@app.post("/save")
+def save_data():
+
+    save_moderators()
+
+    return {
+        "message": "Data saved successfully"
+    }
+
+@app.post("/load")
+def load_data():
+    load_moderators()
+
+    return {
+        "message": "Data loaded successfully",
+        "moderators_count": len(moderators)
+    }
+
+@app.post("/autosave")
+def set_autosave(enabled: bool):
+
+    global AUTO_SAVE
+
+    AUTO_SAVE = enabled
+
+    return {
+        "autosave": AUTO_SAVE
+    }
+
 # ----------------------------------------------------------------
 # INTERNAL FUNCTIONS
 # ----------------------------------------------------------------
@@ -176,7 +236,7 @@ def add_moderator(
         name=name,
         rank=rank,
         offduty=False,
-        timezone=ZoneInfo(timezone_name),
+        timezone=timezone_name,
         availability=availability,
         utc_offset=get_utc_offset_hours(timezone_name),
         filtered=False
@@ -279,6 +339,89 @@ def is_minute_in_availability_range(
         return minute >= start or minute < end
 
     return True
+
+def moderator_to_dict_for_save(
+    moderator: Moderator
+) -> dict:
+
+    return {
+        "name": moderator.name,
+        "rank": moderator.rank.name,
+        "timezone": moderator.timezone,
+        "offduty": moderator.offduty,
+        "availability": [
+            {
+                "start_minute": slot.start_minute,
+                "end_minute": slot.end_minute
+            }
+            for slot in moderator.availability
+        ],
+        "utc_offset": moderator.utc_offset,
+        "filtered": False
+    }
+
+def save_moderators():
+
+    data = {
+        "autosave": AUTO_SAVE,
+        "moderators": [
+            moderator_to_dict_for_save(m)
+            for m in moderators
+        ]
+    }
+
+    with open(DATA_FILE, "w") as file:
+        json.dump(data, file, indent=4)
+
+def load_moderators():
+
+    global AUTO_SAVE
+
+    try:
+
+        with open(DATA_FILE, "r") as file:
+            data = json.load(file)
+
+        AUTO_SAVE = data.get(
+            "autosave",
+            False
+        )
+
+        for mod_data in data["moderators"]:
+
+            availability = [
+                AvailabilityRange(
+                    start_minute=slot["start_minute"],
+                    end_minute=slot["end_minute"]
+                )
+                for slot in mod_data["availability"]
+            ]
+
+            moderator = Moderator(
+                name=mod_data["name"],
+                rank=Rank[mod_data["rank"]],
+                timezone=mod_data["timezone"],
+                availability=availability,
+                utc_offset=mod_data["utc_offset"],
+                filtered=mod_data["filtered"],
+                offduty=mod_data.get(
+                    "offduty",
+                    False
+                )
+            )
+
+            moderators.append(moderator)
+
+    except FileNotFoundError:
+
+        moderators.clear()
+        AUTO_SAVE=False
+
+
+def auto_save():
+
+    if AUTO_SAVE:
+        save_moderators()
 
 # ----------------------------------------------------------------
 # MAIN
