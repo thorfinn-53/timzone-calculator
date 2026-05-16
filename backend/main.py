@@ -10,6 +10,9 @@ app = FastAPI()
 # DATA DEFINITIONS
 # ----------------------------------------------------------------
 
+SLOT_SIZE = 60
+MINUTES_PER_DAY = 1440
+
 class Rank(Enum):
     RECRUIT = "Recruit"
     KNIGHT = "Knight"
@@ -18,33 +21,37 @@ class Rank(Enum):
     PRIME_COMMANDER = "Prime Commander"
     GENERAL = "General"
     SUPREME_GENERAL = "Supreme General"
+    SAIYAN_ROYALTY = "Saiyan Royalty"
 
 
 @dataclass
+@dataclass
 class AvailabilityRange:
-    start_hour: int
-    end_hour: int
+    start_minute: int
+    end_minute: int
 
     def __post_init__(self):
-        if self.start_hour < 0 or self.start_hour > 24:
-            raise ValueError("start_hour must be between 0 and 24")
+        if not 0 <= self.start_minute < MINUTES_PER_DAY:
+            raise ValueError("start_minute must be between 0 and 1439")
 
-        if self.end_hour < 0 or self.end_hour > 24:
-            raise ValueError("end_hour must be between 0 and 24")
+        if not 0 <= self.end_minute <= MINUTES_PER_DAY:
+            raise ValueError("end_minute must be between 0 and 1440")
 
 
 @dataclass
 class Moderator:
     name: str
     rank: Rank
+    offduty: bool
     timezone: ZoneInfo
     availability: list[AvailabilityRange]
     utc_offset: int
     filtered: bool
 
 @dataclass
-class GraphHour:
-    hour: int
+class GraphSlot:
+    start_minute:int
+    end_minute:int
     active_mods: list[str]
     mod_count: int
 
@@ -54,14 +61,7 @@ class GraphHour:
 # ----------------------------------------------------------------
 
 moderators: list[Moderator] = []
-final_graph: list[GraphHour] = [
-    GraphHour(
-        hour=i,
-        active_mods=[],
-        mod_count=0
-    )
-    for i in range(24)
-]
+final_graph: list[GraphSlot] = []
 
 
 # ----------------------------------------------------------------
@@ -81,7 +81,8 @@ def get_moderators():
     return moderators
 
 @app.get("/graph_data")
-def get_graph_data():
+def get_graph_data(slot_size: int = SLOT_SIZE):
+    calculate_graph_data(slot_size)
     return final_graph
 
 # ----------------------------------------------------------------
@@ -93,8 +94,8 @@ def create_moderator(data: dict):
 
     availability = [
         AvailabilityRange(
-            start_hour=slot["start_hour"],
-            end_hour=slot["end_hour"]
+            start_minute=time_to_minutes(slot["start"]),
+            end_minute=time_to_minutes(slot["end"])
         )
         for slot in data["availability"]
     ]
@@ -106,25 +107,9 @@ def create_moderator(data: dict):
         availability=availability
     )
 
-    calculate_graph_data()
+    calculate_graph_data(SLOT_SIZE)
 
-    return {
-        "message": "Moderator added",
-        "moderator": {
-            "name": moderator.name,
-            "rank": moderator.rank.value,
-            "timezone": moderator.timezone.key,
-            "availability": [
-                {
-                    "start_hour": slot.start_hour,
-                    "end_hour": slot.end_hour
-                }
-                for slot in moderator.availability
-            ],
-            "utc_offset": moderator.utc_offset,
-            "filtered": moderator.filtered
-        }
-    }
+    return {"message": "Moderator added"}
 
 @app.post("/reset")
 def reset_data():
@@ -156,6 +141,7 @@ def add_moderator(
     moderator = Moderator(
         name=name,
         rank=rank,
+        offduty=False,
         timezone=ZoneInfo(timezone_name),
         availability=availability,
         utc_offset=get_utc_offset_hours(timezone_name),
@@ -170,53 +156,63 @@ def get_all_moderators() -> list[Moderator]:
     return moderators
 
 
-def calculate_graph_data():
-    
-    for graph_hour in final_graph:
-        graph_hour.active_mods.clear()
-        graph_hour.mod_count = 0
+def calculate_graph_data(slot_size: int):
+    global final_graph
+
+    final_graph = [
+        GraphSlot(
+            start_minute=i,
+            end_minute=i + slot_size,
+            active_mods=[],
+            mod_count=0
+        )
+        for i in range(0, MINUTES_PER_DAY, slot_size)
+    ]
+
+    for graph_slot in final_graph:
+        slot_start = graph_slot.start_minute
 
         for moderator in moderators:
-
-            mod_availability_range_UTC: list[AvailabilityRange] = []
+            utc_ranges: list[AvailabilityRange] = []
 
             for availability_range in moderator.availability:
-                utc_start = (availability_range.start_hour - moderator.utc_offset) % 24
-                utc_end = (availability_range.end_hour - moderator.utc_offset) % 24
+                utc_start = convert_local_minutes_to_utc(
+                    availability_range.start_minute,
+                    moderator.utc_offset
+                )
 
-                mod_availability_range_UTC.append(
+                utc_end = convert_local_minutes_to_utc(
+                    availability_range.end_minute,
+                    moderator.utc_offset
+                )
+
+                utc_ranges.append(
                     AvailabilityRange(
-                        start_hour=utc_start,
-                        end_hour=utc_end
+                        start_minute=utc_start,
+                        end_minute=utc_end
                     )
                 )
 
-            if is_hour_in_availability_ranges(mod_availability_range_UTC,graph_hour.hour):
-                graph_hour.active_mods.append(moderator.name)
-                graph_hour.mod_count += 1
+            if is_minute_in_availability_ranges(utc_ranges, slot_start):
+                graph_slot.active_mods.append(moderator.name)
+                graph_slot.mod_count += 1
 
 
 
 
-def is_hour_in_availability_ranges(av_range_list:list[AvailabilityRange], hour:int):
+def is_minute_in_availability_ranges(
+    av_range_list: list[AvailabilityRange],
+    minute: int
+) -> bool:
+
     for availability_range in av_range_list:
-        start:int = availability_range.start_hour
-        end:int = availability_range.end_hour
+        start = availability_range.start_minute
+        end = availability_range.end_minute
 
-        if start < end:
-            if start <= hour < end:
-                return True
-            
-        elif start > end:
-            if hour >= start or hour < end:
-                return True
-        
-        else:
+        if is_minute_in_availability_range(start, end, minute):
             return True
-        
+
     return False
-
-
 
 def get_utc_offset_hours(timezone_name: str) -> int:
 
@@ -228,6 +224,26 @@ def get_utc_offset_hours(timezone_name: str) -> int:
 
     return int(utc_offset.total_seconds() / 3600)
 
+def time_to_minutes(time: str) -> int:
+    hours, minutes = time.split(":")
+    return int(hours) * 60 + int(minutes)
+
+def convert_local_minutes_to_utc(local_minutes: int, utc_offset_hours: int) -> int:
+    return (local_minutes - utc_offset_hours * 60) % 1440
+
+def is_minute_in_availability_range(
+    start: int,
+    end: int,
+    minute: int
+) -> bool:
+
+    if start < end:
+        return start <= minute < end
+
+    if start > end:
+        return minute >= start or minute < end
+
+    return True
 
 # ----------------------------------------------------------------
 # MAIN
