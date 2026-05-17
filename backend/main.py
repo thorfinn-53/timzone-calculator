@@ -183,21 +183,54 @@ def reset_data():
         "message": "All data reset"
     }
 
-@app.post("/filters")
-def set_filters(data: dict):
+@app.post("/filters/mod")
+def filter_by_mod(data: dict):
 
-    filtered_mods = data["filtered_mods"]
+    visible_mods = data["visible_mods"]
 
     for moderator in moderators:
-
-        if moderator.name in filtered_mods:
-            moderator.filtered = True
-
-        else:
-            moderator.filtered = False
+        moderator.filtered = moderator.name not in visible_mods
 
     return {
-        "message": "Filters updated"
+        "message": "Moderator filter updated",
+        "visible_mods": visible_mods
+    }
+
+@app.post("/filters/rank")
+def filter_by_rank(data: dict):
+
+    visible_ranks = data["visible_ranks"]
+
+    allowed_ranks = {
+        "RECRUIT",
+        "KNIGHT",
+        "COMMANDER",
+        "GENERAL"
+    }
+
+    invalid_ranks = set(visible_ranks) - allowed_ranks
+
+    if invalid_ranks:
+        raise ValueError(f"Invalid rank filters: {invalid_ranks}")
+
+    for moderator in moderators:
+        moderator_rank_family = get_rank_family(moderator.rank)
+
+        moderator.filtered = moderator_rank_family not in visible_ranks
+
+    return {
+        "message": "Rank filter updated",
+        "visible_ranks": visible_ranks
+    }
+
+@app.post("/filters/clear")
+def clear_filters():
+
+    for moderator in moderators:
+        moderator.filtered = False
+
+    return {
+        "message": "Filters cleared"
     }
 
 @app.post("/save")
@@ -278,7 +311,7 @@ def calculate_graph_data(slot_size: int):
         slot_start = graph_slot.start_minute
 
         for moderator in moderators:
-            if moderator.filtered==False:
+            if moderator.filtered==False or moderator.offduty==False:
                 utc_ranges: list[AvailabilityRange] = []
 
                 for availability_range in moderator.availability:
@@ -433,6 +466,21 @@ def auto_save():
 
     if AUTO_SAVE:
         save_moderators()
+
+def get_rank_family(rank: Rank) -> str:
+    if rank == Rank.RECRUIT:
+        return "RECRUIT"
+
+    if rank in [Rank.KNIGHT, Rank.VANGUARD_KNIGHT]:
+        return "KNIGHT"
+
+    if rank in [Rank.COMMANDER, Rank.PRIME_COMMANDER]:
+        return "COMMANDER"
+
+    if rank in [Rank.GENERAL, Rank.SUPREME_GENERAL]:
+        return "GENERAL"
+
+    raise ValueError(f"Unknown rank: {rank}")
 
 # ----------------------------------------------------------------
 # MAIN
