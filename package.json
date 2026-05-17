@@ -16,6 +16,7 @@
     "react-hook-form": "^7.76.0",
     "react-router-dom": "^7.15.1",
     "react-toastify": "^11.1.0",
+    "recharts": "^3.8.1",
     "tailwindcss": "^4.3.0"
   },
   "devDependencies": {

@@ -33,7 +33,7 @@ export default function App() {
   const onSubmit = async (data) => {
 
 
-    let a = await fetch("http://127.0.0.1:8000/moderators", {
+    let a = await fetch("http://127.0.0.1:8000/moderators/add", {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
@@ -48,40 +48,24 @@ export default function App() {
       })
     })
 
-    let res = await a.json()
+  
+   toast.success('Data submitted', {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+        transition: Bounce,
+      });
 
-    let mod = await fetch("http://127.0.0.1:8000/filters/mod", {
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      method: "POST",
-      body: JSON.stringify({
-        name: data.Name,
-       
-       
+   
 
-      })
-    })
 
-    let mod_result = await a.json()
-
-    let rank = await fetch("http://127.0.0.1:8000/filters/rank", {
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      },
-      method: "POST",
-      body: JSON.stringify({
-         rank: data.Rank.toUpperCase().replace(/ /g, "_"),
-       
-       
-
-      })
-    })
-
-    let rank_result = await a.json()
-    
+   
+  
 
     
 
@@ -94,23 +78,6 @@ export default function App() {
 
 
 
-  const showToast = () => {
-
-    if (isSubmitted) {
-
-      toast.success('Data submitted', {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: "light",
-        transition: Bounce,
-      });
-    }
-  }
 
   const addTime = () => {
     setavailability(availability.concat({ start: "", end: "" }))
@@ -211,7 +178,7 @@ export default function App() {
                   }`}
                 {...register("Name", {
                   required: { value: true, message: "This field is required" },
-                  minLength: { value: 4, message: "Minimum length should be 4" },
+                  minLength: { value: 3, message: "Minimum length should be 3" },
                   maxLength: { value: 20, message: "Maximum length is 20" },
                   pattern: { value: /^[A-Za-z ]+$/, message: "Name should only contain letters" }
                 })}
@@ -362,7 +329,7 @@ export default function App() {
               <button
                 type="submit"
                 className="flex w-full justify-center rounded-lg bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-md transition duration-200 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 active:bg-indigo-800 cursor-pointer"
-                onClick={showToast}
+               
               >
                 Submit
               </button>
