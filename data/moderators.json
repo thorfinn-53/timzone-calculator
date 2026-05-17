@@ -2,20 +2,6 @@
     "autosave": true,
     "moderators": [
         {
-            "name": "Dray",
-            "rank": "KNIGHT",
-            "timezone": "Europe/Rome",
-            "offduty": false,
-            "availability": [
-                {
-                    "start_minute": 870,
-                    "end_minute": 1020
-                }
-            ],
-            "utc_offset": 2,
-            "filtered": false
-        },
-        {
             "name": "thorfinn",
             "rank": "KNIGHT",
             "timezone": "Europe/Rome",

@@ -1,9 +1,12 @@
-import { useForm, useFieldArray } from "react-hook-form";
+import { useForm} from "react-hook-form";
 import { ToastContainer, toast } from 'react-toastify';
 import { Bounce } from "react-toastify";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"
+
 
 export default function App() {
+  const navigate = useNavigate()
   const [availability, setavailability] = useState([{ start: "", end: "" }])
  const [timezones, settimezones] = useState([])
   const [query, setquery] = useState("")
@@ -46,8 +49,41 @@ export default function App() {
     })
 
     let res = await a.json()
+
+    let mod = await fetch("http://127.0.0.1:8000/filters/mod", {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      method: "POST",
+      body: JSON.stringify({
+        name: data.Name,
+       
+       
+
+      })
+    })
+
+    let mod_result = await a.json()
+
+    let rank = await fetch("http://127.0.0.1:8000/filters/rank", {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      method: "POST",
+      body: JSON.stringify({
+         rank: data.Rank.toUpperCase().replace(/ /g, "_"),
+       
+       
+
+      })
+    })
+
+    let rank_result = await a.json()
     
-    console.log({ data, availability })
+
+    
 
 
     reset()
@@ -122,6 +158,12 @@ export default function App() {
 
 
   return (
+    <>
+    <div className="flex justify-center">
+
+  
+    </div>
+   
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12 sm:px-6 lg:px-8">
       <ToastContainer
         position="top-right"
@@ -327,8 +369,16 @@ export default function App() {
             </div>
           </div>
         </form>
-
+  <button
+      type="button"
+      onClick={() => navigate("/graph")}
+      className="flex w-full items-center justify-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm font-semibold text-indigo-600 transition duration-200 hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 cursor-pointer"
+    >
+      View Graph →
+    </button>
       </div>
     </div>
+    
+     </>
   );
 }
