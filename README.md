@@ -53,17 +53,97 @@ Web app for managing moderator availability across multiple timezones.
 
 
 
+# Setting up the backend
 
+## Windows
+
+If you are using Windows, the easiest way is to run:
+
+```cmd
+setup_backend.bat
+```
+
+This will automatically:
+
+- check if Python is installed
+- create the virtual environment
+- activate it
+- install the required Python packages from `requirements.txt`
+
+If Python is not installed, the script will show an error message.  
+Install Python from the official website and make sure to enable:
+
+```text
+Add Python to PATH
+```
+
+Then run `setup_backend.bat` again.
+
+---
+
+## macOS / Linux / Manual setup
+
+From the root project folder on Linux/Mac OS, open a terminal and run:
+
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+On some systems, you may need to use:
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+On Windows:
+```bash
+python3 -m venv venv
+source venv/Source/activate
+pip install -r requirements.txt
+```
+
+---
 
 # How to Send Data to Backend
 
-## Launch the backend:
+## Launch the backend
+
+## Windows
+
+If you are using Windows, simply run:
+
+```cmd
+run_backend.bat
+```
+
+This will activate the virtual environment and start the FastAPI backend.
+
+---
+
+## macOS / Linux / Manual launch
+
+From the root project folder, run:
+
 ```bash
+source venv/bin/activate
 uvicorn backend.main:app --reload
 ```
 
-Data from the json file that stores every moderator and Autosave option will be automatically loaded. (See below)
+On Windows, if you prefer doing it manually instead of using the `.bat` file:
 
+```cmd
+venv\Scripts\activate
+uvicorn backend.main:app --reload
+```
+
+When the backend starts, data from the JSON file that stores every moderator and the autosave option will be automatically loaded. See the save/load section below for more details.
+
+
+---
 
 ## API Endpoints
 
