@@ -280,7 +280,7 @@ WATCH OUT: If Autosave is enabled (not by default), reset means all data will be
 
 ---
 
-### Filter Moderators
+### ~~Filter Moderators~~ **DEPRECTATED**
 
 `POST /filters`
 
@@ -296,6 +296,90 @@ Body example:
 ```
 
 All moderators whose names are inside `filtered_mods` will be excluded from graph generation.
+This method is **DEPRECATED** as it has been replaced by the new filtering options (see below).
+
+---
+
+### Filter by Moderator
+
+`POST /filters/mod`
+
+Shows only the moderators whose names are included in `visible_mods`.
+
+Body example:
+
+```json
+{
+  "visible_mods": ["Dray", "Thorfinn"]
+}
+```
+
+Response example:
+
+```json
+{
+  "message": "Moderator filter updated",
+  "visible_mods": ["Dray", "Thorfinn"]
+}
+```
+
+---
+
+### Filter by Rank
+
+`POST /filters/rank`
+
+Shows only the moderators whose rank family is included in `visible_ranks`.
+
+Valid rank families:
+
+```text
+RECRUIT
+KNIGHT
+COMMANDER
+GENERAL
+```
+
+Rank families include upgraded ranks:
+
+```text
+KNIGHT    -> KNIGHT, VANGUARD_KNIGHT
+COMMANDER -> COMMANDER, PRIME_COMMANDER
+GENERAL   -> GENERAL, SUPREME_GENERAL
+```
+
+Body example:
+
+```json
+{
+  "visible_ranks": ["KNIGHT", "COMMANDER"]
+}
+```
+
+Response example:
+
+```json
+{
+  "message": "Rank filter updated",
+  "visible_ranks": ["KNIGHT", "COMMANDER"]
+}
+```
+
+---
+
+### Clear Filters
+
+`POST /filters/clear`
+
+Removes all active filters and shows every moderator again.
+
+Response example:
+
+```json
+{
+  "message": "Filters cleared"
+}
+```
 
 
 
