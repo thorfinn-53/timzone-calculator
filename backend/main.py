@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from enum import Enum
 from dataclasses import dataclass
 from zoneinfo import ZoneInfo, available_timezones
+from fastapi.middleware.cors import CORSMiddleware # To fix cors policy error 
 import json
 
 
@@ -11,6 +12,18 @@ import json
 # ----------------------------------------------------------------
 # BACKEND LIFESPAN HANDLER
 # ----------------------------------------------------------------
+
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  #  React dev server url
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
