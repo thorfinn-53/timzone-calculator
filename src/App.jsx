@@ -5,11 +5,13 @@ import { useState, useEffect } from "react";
 
 export default function App() {
   const [availability, setavailability] = useState([{ start: "", end: "" }])
-  const timezones = Intl.supportedValuesOf('timeZone');
+ const [timezones, settimezones] = useState([])
   const [query, setquery] = useState("")
 
   const filter = query === "" ? [] : timezones.filter(timezone => timezone.toLocaleLowerCase().includes(query.toLocaleLowerCase()))
   const [showdropdown, setshowdropdown] = useState(false)
+
+  
 
 
 
@@ -44,8 +46,8 @@ export default function App() {
     })
 
     let res = await a.json()
-    console.log(res)
-    // console.log({ data, availability })
+    
+    console.log({ data, availability })
 
 
     reset()
@@ -103,13 +105,18 @@ export default function App() {
 
     async function getTimezone() {
       let a = await fetch("http://127.0.0.1:8000/timezones")
-      console.log(a)
+      let res=await a.json()
+      settimezones(res)
+      
       
     }
     getTimezone()
 
   }, [])
 
+
+  
+  
 
 
 
