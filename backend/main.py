@@ -148,7 +148,7 @@ def get_autosave():
 # (INPUT) DATA FROM FRONTEND FUNCTIONS (POST ENDPOINTS)
 # ----------------------------------------------------------------
 
-@app.post("/moderators")
+@app.post("/moderators/add")
 def create_moderator(data: dict):
 
     availability = [
@@ -159,16 +159,56 @@ def create_moderator(data: dict):
         for slot in data["availability"]
     ]
 
-    moderator = add_moderator(
+    moderator, was_updated = add_moderator(
         name=data["name"],
         rank=Rank[data["rank"]],
         timezone_name=data["timezone"],
-        availability=availability
+        availability=availability,
+        offduty=data.get("offduty", False)
     )
 
-    calculate_graph_data(SLOT_SIZE)
+    if was_updated:
+        message = "Applied changes to already existing moderator"
+    else:
+        message = "Moderator added"
 
-    return {"message": "Moderator added"}
+    return {
+        "message": message,
+        "moderator": {
+            "name": moderator.name,
+            "rank": moderator.rank.value,
+            "timezone": moderator.timezone,
+            "availability": [
+                {
+                    "start_minute": slot.start_minute,
+                    "end_minute": slot.end_minute
+                }
+                for slot in moderator.availability
+            ],
+            "utc_offset": moderator.utc_offset,
+            "filtered": moderator.filtered,
+            "offduty": moderator.offduty
+        }
+    }
+
+@app.post("/moderators/remove")
+def remove_moderator(data: dict):
+
+    name_to_remove = data["name"]
+
+    for index, moderator in enumerate(moderators):
+        if moderator.name == name_to_remove:
+            removed = moderators.pop(index)
+
+            return {
+                "message": "Moderator removed",
+                "removed_moderator": removed.name
+            }
+
+    return {
+        "message": "Moderator not found",
+        "removed_moderator": None
+    }
 
 @app.post("/reset")
 def reset_data():
@@ -270,24 +310,33 @@ def add_moderator(
     name: str,
     rank: Rank,
     timezone_name: str,
-    availability: list[AvailabilityRange]
-) -> Moderator:
+    availability: list[AvailabilityRange],
+    offduty: bool = False
+) -> tuple[Moderator, bool]:
 
     if timezone_name not in available_timezones():
         raise ValueError(f"Invalid timezone: {timezone_name}")
 
-    moderator = Moderator(
+    new_moderator = Moderator(
         name=name,
         rank=rank,
-        offduty=False,
         timezone=timezone_name,
+        offduty=offduty,
         availability=availability,
         utc_offset=get_utc_offset_hours(timezone_name),
         filtered=False
     )
 
-    moderators.append(moderator)
-    return moderator
+    for index, moderator in enumerate(moderators):
+        if moderator.name == name:
+            new_moderator.filtered = moderator.filtered
+            new_moderator.offduty = moderator.offduty
+
+            moderators[index] = new_moderator
+            return new_moderator, True
+
+    moderators.append(new_moderator)
+    return new_moderator, False
 
 
 def get_all_moderators() -> list[Moderator]:

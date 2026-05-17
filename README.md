@@ -16,8 +16,6 @@ Web app for managing moderator availability across multiple timezones.
 #### Frontend:
 - 
 #### Backend:
-- Enable changes to single mods
-- Remove mod by name
 
 
 
@@ -45,6 +43,8 @@ Web app for managing moderator availability across multiple timezones.
 - Filtering script
 - Store data in json file
 - Load data from json file
+- Enable changes to single mods
+- Remove mod by name
 
 
 
@@ -147,9 +147,12 @@ When the backend starts, data from the JSON file that stores every moderator and
 
 ## API Endpoints
 
-### Add Moderator
+### Add or Update Moderator
 
-`POST /moderators`
+`POST /moderators/add`
+
+Adds a new moderator.  
+If a moderator with the same name already exists, the backend updates that moderator instead.
 
 Body example:
 
@@ -158,12 +161,93 @@ Body example:
   "name": "Dray",
   "rank": "KNIGHT",
   "timezone": "Europe/Rome",
+  "offduty": false,
   "availability": [
     {
       "start": "14:30",
       "end": "17:00"
     }
   ]
+}
+```
+
+Response example when adding a new moderator:
+
+```json
+{
+  "message": "Moderator added",
+  "moderator": {
+    "name": "Dray",
+    "rank": "Commander",
+    "timezone": "Europe/Rome",
+    "availability": [
+      {
+        "start_minute": 870,
+        "end_minute": 1020
+      }
+    ],
+    "utc_offset": 2,
+    "filtered": false,
+    "offduty": false
+  }
+}
+```
+
+Response example when updating an existing moderator:
+
+```json
+{
+  "message": "Applied changes to already existing moderator",
+  "moderator": {
+    "name": "Dray",
+    "rank": "Commander",
+    "timezone": "Europe/Rome",
+    "availability": [
+      {
+        "start_minute": 870,
+        "end_minute": 1020
+      }
+    ],
+    "utc_offset": 2,
+    "filtered": false,
+    "offduty": false
+  }
+}
+```
+
+**`offduty` is optional. If it is not provided, it defaults to `false`.**
+
+---
+
+### Remove Moderator
+
+`POST /moderators/remove`
+
+Removes a moderator by name.
+
+Body example:
+
+```json
+{
+  "name": "Dray"
+}
+```
+
+Response example when the moderator exists:
+
+```json
+{
+  "message": "Moderator removed",
+  "removed_moderator": "Dray"
+}
+```
+
+Response example when the moderator does not exist:
+
+```json
+{
+  "message": "Moderator not found",
+  "removed_moderator": null
 }
 ```
 
