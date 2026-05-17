@@ -14,26 +14,15 @@ Web app for managing moderator availability across multiple timezones.
 ### To do:
 
 #### Frontend:
-- 
+
 #### Backend:
-
-
-
-
-### In progress:
-
-#### Frontend:
-- 
-#### Backend:
-- 
-
 
 
 
 ### Done:
 
 #### Frontend:
-- 
+
 #### Backend:
 - Store data in runtime objects
 - Send graph data with POST endpoint
@@ -178,7 +167,7 @@ Response example when adding a new moderator:
   "message": "Moderator added",
   "moderator": {
     "name": "Dray",
-    "rank": "Commander",
+    "rank": "Knight",
     "timezone": "Europe/Rome",
     "availability": [
       {
@@ -200,7 +189,7 @@ Response example when updating an existing moderator:
   "message": "Applied changes to already existing moderator",
   "moderator": {
     "name": "Dray",
-    "rank": "Commander",
+    "rank": "Knight",
     "timezone": "Europe/Rome",
     "availability": [
       {
