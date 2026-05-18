@@ -67,8 +67,8 @@ export default function Graph() {
   useEffect(() => {
     async function fetchAll() {
       const [graphRes, modRes] = await Promise.all([
-        fetch("/graph_data?slot_size=30"),
-        fetch("/moderators")
+        fetch("https://timzone-calculator-production.up.railway.app/graph_data?slot_size=30"),
+        fetch("https://timzone-calculator-production.up.railway.app/moderators")
       ])
       const raw = await graphRes.json()
       const mods = await modRes.json()
