@@ -1,6 +1,6 @@
 import React from 'react'
 import { useEffect, useState } from "react"
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LabelList, CartesianGrid } from "recharts"
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, CartesianGrid } from "recharts"
 import { useNavigate } from "react-router-dom"
 
 function getModColor(rank) {
@@ -25,7 +25,10 @@ const RANK_GROUPS = {
 
 function transformData(rawData, activeMods) {
   return rawData.map(slot => {
-    const entry = { time: `${Math.floor(slot.start_minute / 60)}:${String(slot.start_minute % 60).padStart(2, "0")}` }
+    const entry = {
+      time: `${Math.floor(slot.start_minute / 60)}:${String(slot.start_minute % 60).padStart(2, "0")}`,
+      activeMods: slot.active_mods.filter(m => activeMods.includes(m))
+    }
     activeMods.forEach(mod => {
       entry[mod] = slot.active_mods.includes(mod) ? 1 : 0
     })
@@ -38,16 +41,19 @@ const CustomTooltip = ({ active, payload, label }) => {
     const activeMods = payload.filter(p => p.value === 1)
     return (
       <div className="bg-white border border-gray-200 rounded-xl shadow-lg p-3 text-sm">
-        <p className="font-semibold text-gray-700 mb-2">{label}</p>
+        <p className="font-semibold text-gray-700 mb-2">🕐 {label} UTC</p>
         {activeMods.length === 0 ? (
           <p className="text-gray-400">No mods active</p>
         ) : (
-          activeMods.map((p, i) => (
-            <div key={i} className="flex items-center gap-2 mb-1">
-              <div className="w-2.5 h-2.5 rounded-full" style={{ background: p.fill }} />
-              <span className="text-gray-600">{p.dataKey}</span>
-            </div>
-          ))
+          <>
+            <p className="text-xs text-gray-400 mb-2">{activeMods.length} mod{activeMods.length > 1 ? "s" : ""} active</p>
+            {activeMods.map((p, i) => (
+              <div key={i} className="flex items-center gap-2 mb-1">
+                <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: p.fill }} />
+                <span className="text-gray-700 font-medium">{p.dataKey}</span>
+              </div>
+            ))}
+          </>
         )}
       </div>
     )
@@ -138,9 +144,18 @@ export default function Graph() {
         </button>
       </div>
 
-      {/* Filters — stacked on mobile, side by side on desktop */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      {/* Legend */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {allMods.map(mod => (
+          <div key={mod} className="flex items-center gap-1.5 bg-white border border-gray-100 rounded-full px-3 py-1 text-xs font-medium text-gray-600 shadow-sm">
+            <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: getModColor(modRanks[mod]) }} />
+            {mod}
+          </div>
+        ))}
+      </div>
 
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="bg-white border border-gray-100 rounded-2xl shadow p-4 flex-1">
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Filter by mod</p>
           <div className="flex flex-wrap gap-2">
@@ -183,22 +198,25 @@ export default function Graph() {
             })}
           </div>
         </div>
-
       </div>
 
-      {/* Chart — scrollable on mobile */}
+      {/* Chart */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-xl p-4 sm:p-6">
         <div className="overflow-x-auto">
-          <div style={{ minWidth: "600px" }}>
-            <ResponsiveContainer width="100%" height={400}>
-              <BarChart data={graphData} barCategoryGap={2} margin={{ top: 10, right: 20, left: 0, bottom: 5 }}>
+          <div style={{ minWidth: "1400px" }}>
+            <ResponsiveContainer width="100%" height={500}>
+              <BarChart
+                data={graphData}
+                barCategoryGap="15%"
+                margin={{ top: 20, right: 20, left: 0, bottom: 5 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
                 <XAxis
                   dataKey="time"
-                  tick={{ fontSize: 10, fill: "#6b7280" }}
+                  tick={{ fontSize: 11, fill: "#6b7280" }}
                   axisLine={{ stroke: "#e5e7eb" }}
                   tickLine={false}
-                  interval={3}
+                  interval={1}
                 />
                 <YAxis
                   allowDecimals={false}
@@ -209,17 +227,13 @@ export default function Graph() {
                 />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: "#f9fafb" }} />
                 {visibleMods.map((mod) => (
-                  <Bar key={mod} dataKey={mod} stackId="a" fill={getModColor(modRanks[mod])} radius={[0, 0, 0, 0]}>
-                    <LabelList content={(props) => {
-                      const { x, y, width, height } = props
-                      if (height < 22) return null
-                      return (
-                        <text x={x + width / 2} y={y + height / 2} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={9} fontWeight={600}>
-                          {mod}
-                        </text>
-                      )
-                    }} />
-                  </Bar>
+                  <Bar
+                    key={mod}
+                    dataKey={mod}
+                    stackId="a"
+                    fill={getModColor(modRanks[mod])}
+                    radius={[0, 0, 0, 0]}
+                  />
                 ))}
               </BarChart>
             </ResponsiveContainer>

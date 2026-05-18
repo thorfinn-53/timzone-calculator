@@ -39,6 +39,8 @@ app.add_middleware(
     allow_origins=[
         "https://thorfinn-53-timzone-calculator.vercel.app",
         "https://timzone-calculator-production.up.railway.app",
+        "http://127.0.0.1:8000",
+        "http://localhost:5173"
     ],
     allow_credentials=True,
     allow_methods=["*"],
