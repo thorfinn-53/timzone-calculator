@@ -33,7 +33,7 @@ export default function App() {
   const onSubmit = async (data) => {
 
 
-    let a = await fetch("/moderators/add", {
+    let a = await fetch("timzone-calculator-production.up.railway.app/moderators/add", {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
@@ -107,7 +107,7 @@ export default function App() {
   useEffect(() => {
 
     async function getTimezone() {
-      let a = await fetch("/timezones")
+      let a = await fetch("timzone-calculator-production.up.railway.app/timezones")
       let res=await a.json()
       settimezones(res)
       
