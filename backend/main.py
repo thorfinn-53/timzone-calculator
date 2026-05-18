@@ -45,9 +45,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-@app.get("/{full_path:path}")
-def serve_react(full_path: str):
-    return FileResponse("dist/index.html")
+
+
 
 # ----------------------------------------------------------------
 # DATA DEFINITIONS
@@ -310,6 +309,11 @@ def set_autosave(enabled: bool):
     return {
         "autosave": AUTO_SAVE
     }
+    
+    
+    
+    
+  
 
 # ----------------------------------------------------------------
 # INTERNAL FUNCTIONS
@@ -569,3 +573,14 @@ def main():
 
 if __name__ == "__main__":
     main()
+    
+    
+    
+app.mount("/assets", StaticFiles(directory="dist/assets"), name="assets")
+         
+         
+@app.get("/{full_path:path}")
+def serve_react(full_path: str):
+    return FileResponse("dist/index.html")
+    
+ 
