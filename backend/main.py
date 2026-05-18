@@ -10,8 +10,7 @@ import json
 
 
 # for deployment purpose
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+
 
 
 # ----------------------------------------------------------------
@@ -33,7 +32,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
-app.mount("/assets", StaticFiles(directory="dist/assets"), name="assets")
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -576,11 +575,6 @@ if __name__ == "__main__":
     
     
     
-app.mount("/assets", StaticFiles(directory="dist/assets"), name="assets")
-         
-         
-@app.get("/{full_path:path}")
-def serve_react(full_path: str):
-    return FileResponse("dist/index.html")
+
     
  
