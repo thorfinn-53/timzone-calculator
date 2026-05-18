@@ -33,7 +33,7 @@ export default function App() {
   const onSubmit = async (data) => {
 
 
-    let a = await fetch("http://127.0.0.1:8000/moderators/add", {
+    let a = await fetch("/moderators/add", {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
@@ -107,7 +107,7 @@ export default function App() {
   useEffect(() => {
 
     async function getTimezone() {
-      let a = await fetch("http://127.0.0.1:8000/timezones")
+      let a = await fetch("/timezones")
       let res=await a.json()
       settimezones(res)
       

@@ -9,6 +9,11 @@ import json
 
 
 
+# for deployment purpose
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+
 # ----------------------------------------------------------------
 # BACKEND LIFESPAN HANDLER
 # ----------------------------------------------------------------
@@ -28,6 +33,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+app.mount("/assets", StaticFiles(directory="dist/assets"), name="assets")
 
 app.add_middleware(
     CORSMiddleware,
@@ -39,6 +45,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+@app.get("/{full_path:path}")
+def serve_react(full_path: str):
+    return FileResponse("dist/index.html")
 
 # ----------------------------------------------------------------
 # DATA DEFINITIONS

@@ -67,8 +67,8 @@ export default function Graph() {
   useEffect(() => {
     async function fetchAll() {
       const [graphRes, modRes] = await Promise.all([
-        fetch("http://127.0.0.1:8000/graph_data?slot_size=30"),
-        fetch("http://127.0.0.1:8000/moderators")
+        fetch("/graph_data?slot_size=30"),
+        fetch("/moderators")
       ])
       const raw = await graphRes.json()
       const mods = await modRes.json()
