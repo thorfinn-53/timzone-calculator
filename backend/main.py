@@ -37,7 +37,7 @@ app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://thorfinn-53-timzone-calculator.vercel.app",
+        "https://timezone-calculator-henna.vercel.app",
         "https://timzone-calculator-production.up.railway.app",
         "http://127.0.0.1:8000",
         "http://localhost:5173"
